@@ -3,13 +3,15 @@ import configparser
 import os
 import logging
 
+prefix = "&"
+
 logger = logging.getLogger('discord')
 logger.setLevel(logging.WARNING)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-client = commands.AutoShardedBot(command_prefix="&", help_command=None)
+client = commands.AutoShardedBot(command_prefix=prefix, help_command=None)
 client.remove_command("help")
 
 client.cfgParser = configparser.ConfigParser()
