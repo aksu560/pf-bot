@@ -13,9 +13,52 @@ class Pathfinder(commands.Cog):
     async def Spell(self, ctx, *, argument: str):
         """Example command"""
 
-        args = argparse.parse(ctx.message)
+        # Data structure where we define all the flags and their types/aliases.
+        arg_dict = {
+            # Define all the arguments and their types here. You should avoid single character arguments here. Put
+            # those into the aliases.
+            "arg_index":
+                {
+                    "--help": type(True),
+                    "--name": type(""),
+                },
+            # Define all the aliases for arguments here.
+            "arg_alias":
+                {
+                    "-h": "--help",
+                    "-f": "--help",
+                    "-n": "--name",
+                },
+            "arg_help":
+                {
+                    "--help": "Shows this message",
+                    "--name": "Name of the spell"
+                }
+        }
 
-        await ctx.send(args)
+        args = await argparse.parse(ctx.message, arg_dict, ctx)
+
+        # All command logic should go under this, because if the return from argparse.parse() is false, incorrect
+        # flags have been passed.
+        if args:
+
+            # Help output
+            if "--help" in args.keys():
+
+                flaglist = []
+                for arg in arg_dict["arg_help"].keys():
+                    flaglist.append(
+                        f"{str(arg)}, {str(argparse.parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
+                    )
+
+                output = "```"
+                for flag in flaglist:
+                    output += f"{flag}\n"
+                output += "```"
+                await ctx.send(output)
+                return
+
+            await ctx.send(args)
 
 
 def setup(client: commands.Bot):

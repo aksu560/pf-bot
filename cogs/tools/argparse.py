@@ -1,4 +1,6 @@
-def parse(msg):
+# This is a shit flag argument parser, with confusing logic, and borderline nonsensical configuration. Don't use it.
+
+async def parse(msg, cmd_args, ctx):
     split = msg.content.split(" ")[1:]
     formattedSplit = []
     wip_brackets = ""
@@ -35,6 +37,39 @@ def parse(msg):
                     argdict[arg] = True
                 else:
                     argdict[arg] = formattedSplit[i + 1]
-        except:
+        except IndexError as e:
             argdict[arg] = True
+
+    # Handling aliases
+    for arg in argdict.keys():
+        if arg in cmd_args["arg_alias"]:
+            # Store the value for the alised flag.
+            arg_value = argdict[arg]
+            # Remove the alias value from output.
+            argdict.pop(arg)
+            # add the non aliased flag in, with the correct value.
+            argdict[cmd_args["arg_alias"][arg]] = arg_value
+
+    # Validate types
+    for arg in argdict.keys():
+        try:
+            if not type(argdict[arg]) == cmd_args["arg_index"][arg]:
+                expected_type = str(cmd_args['arg_index'][arg]).split("'")[1]
+                got_type = str(type(argdict[arg])).split("'")[1]
+                await ctx.send(f"Command {ctx.command} flag {arg} expected type {expected_type}. Got {got_type} instead")
+                return False
+        except KeyError as e:
+            return f'Command {ctx.command} has no flag {e}'
+
+
     return argdict
+
+
+# Returns all the aliases for target flag.
+def parse_aliases(target_arg, args):
+    output = []
+    for alias in args["arg_alias"].keys():
+        if args["arg_alias"][alias] == target_arg:
+            output.append(alias)
+
+    return output

@@ -1,6 +1,7 @@
 from discord.ext import commands
 from .permissions import creator
 import os
+import sys
 
 
 class Upkeep(commands.Cog):
