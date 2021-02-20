@@ -56,11 +56,11 @@ async def parse(msg, cmd_args, ctx):
             if not type(argdict[arg]) == cmd_args["arg_index"][arg]:
                 expected_type = str(cmd_args['arg_index'][arg]).split("'")[1]
                 got_type = str(type(argdict[arg])).split("'")[1]
-                await ctx.send(f"Command {ctx.command} flag {arg} expected type {expected_type}. Got {got_type} instead")
+                await ctx.send(
+                    f"Command {ctx.command} flag {arg} expected type {expected_type}. Got {got_type} instead")
                 return False
         except KeyError as e:
             return f'Command {ctx.command} has no flag {e}'
-
 
     return argdict
 
@@ -72,4 +72,18 @@ def parse_aliases(target_arg, args):
         if args["arg_alias"][alias] == target_arg:
             output.append(alias)
 
+    return output
+
+
+def help_text(arg_dict):
+    flaglist = []
+    for arg in arg_dict["arg_help"].keys():
+        flaglist.append(
+            f"{str(arg)}, {', '.join(parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
+        )
+
+    output = "```"
+    for flag in flaglist:
+        output += f"{flag}\n"
+    output += "```"
     return output

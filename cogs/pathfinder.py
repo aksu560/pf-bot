@@ -45,18 +45,7 @@ class Pathfinder(commands.Cog):
 
             # Help output
             if "--help" in args.keys():
-
-                flaglist = []
-                for arg in arg_dict["arg_help"].keys():
-                    flaglist.append(
-                        f"{str(arg)}, {', '.join(argparse.parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
-                    )
-
-                output = "```"
-                for flag in flaglist:
-                    output += f"{flag}\n"
-                output += "```"
-                await ctx.send(output)
+                await ctx.send(argparse.help_text(arg_dict))
                 return
 
             await ctx.send(args)
