@@ -32,7 +32,8 @@ class Pathfinder(commands.Cog):
             "arg_help":
                 {
                     "--help": "Shows this message",
-                    "--name": "Name of the spell"
+                    "--name": "Name of the spell",
+                    "--foo": "Test flag",
                 }
         }
 
@@ -48,7 +49,7 @@ class Pathfinder(commands.Cog):
                 flaglist = []
                 for arg in arg_dict["arg_help"].keys():
                     flaglist.append(
-                        f"{str(arg)}, {str(argparse.parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
+                        f"{str(arg)}, {', '.join(argparse.parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
                     )
 
                 output = "```"
