@@ -81,7 +81,7 @@ def help_text(arg_dict):
         flaglist.append(
             f"{str(arg)}, {', '.join(parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
         )
-
+    flaglist.sort()
     output = "```"
     for flag in flaglist:
         output += f"{flag}\n"
