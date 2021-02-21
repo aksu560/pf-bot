@@ -31,13 +31,6 @@ class Upkeep(commands.Cog):
 
     @commands.command()
     @commands.check(creator.isCreator)
-    async def Update(self, ctx):
-        """Pulls the git repo"""
-        os.execv(sys.executable, ['git'] + ['pull'])
-        await ctx.send("Git pulled, ready for restart.")
-
-    @commands.command()
-    @commands.check(creator.isCreator)
     async def Restart(self, ctx):
         """Restart the bot"""
         await ctx.send("Restarting.")
