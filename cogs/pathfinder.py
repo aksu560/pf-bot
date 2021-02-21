@@ -4,6 +4,7 @@ from .tools import argparse
 from .tools import sheets
 from .tools import paginate
 from fuzzywuzzy import fuzz
+from copy import deepcopy
 
 
 class Pathfinder(commands.Cog):
@@ -14,6 +15,35 @@ class Pathfinder(commands.Cog):
         self.spell_sheet_id = '1cqjnKrvx2qjqlI09K8HapGoBxq42wOsFn87_t8xxn5s'
         self.spell_sheet = sheets.get_pf_sheet().get(spreadsheetId=self.spell_sheet_id, range='A2:CO').execute() \
             .get('values', [])
+
+        # The different flags for classes, and what column they correspond to
+        self.class_filters = {
+            "--wizard": 26,
+            "--cleric": 28,
+            "--druid": 29,
+            "--ranger": 30,
+            "--bard": 31,
+            "--paladin": 32,
+            "--alchemist": 33,
+            "--summoner": 34,
+            "--witch": 35,
+            "--inquisitor": 36,
+            "--oracle": 37,
+            "--antipaladin": 38,
+            "--magus": 39,
+            "--adept": 40,
+            "--bloodrager": 78,
+            "--shaman": 79,
+            "--psychic": 80,
+            "--medium": 81,
+            "--mesmerist": 82,
+            "--occultist": 83,
+            "--spiritualist": 84,
+            "--skald": 85,
+            "--investigator": 86,
+            "--hunter": 87,
+            "--unchained-summoner": 92,
+        }
 
     @commands.command()
     async def Spell(self, ctx, *, argument: str):
@@ -27,9 +57,10 @@ class Pathfinder(commands.Cog):
                 {
                     "--help": type(True),
                     "--name": type(""),
-                    "--search": type(""),
+                    "--search": type(True),
                     "--accuracy": type(""),
                     "--long": type(True),
+                    "--level": type("")
                 },
             # Define all the aliases for arguments here.
             "arg_alias":
@@ -41,6 +72,7 @@ class Pathfinder(commands.Cog):
                     "-find": "--search",
                     "-a": "--long",
                     "-A": "--accuracy",
+                    "--sorcerer": "--wizard"
 
                 },
             "arg_help":
@@ -48,19 +80,27 @@ class Pathfinder(commands.Cog):
                     "--help": "Shows this message",
                     "--name": "Get spell by name",
                     "--accuracy": "Define accuracy for your search. 100 has to be exact match, 0 anything goes. "
-                                  "Default 80 ",
+                                  "Default 80",
                     "--long": "Show extended output",
+                    "--[Class]": "Filter search by the class. Example --wizard, --unchained-summoner",
+                    "--level": "Define spell level to filter by. Example: --level 6 gives only 6th level spells",
                 }
         }
+
+        # Add all the classes to the flags
+        for cls in self.class_filters.keys():
+            arg_dict["arg_index"][cls] = type(True)
 
         args = await argparse.parse(ctx.message, arg_dict, ctx)
         # All command logic should go under this, because if the return from argparse.parse() is false, incorrect
         # flags have been passed.
+        if not args:
+            await ctx.send("Something went wrong")
+            return
         if type(args) == type(""):
             await ctx.send(args)
             return
         else:
-
             # Enter parameters that should be enabled for single parameter use.
             if "single" in args:
                 args["--name"] = args["single"]
@@ -75,7 +115,44 @@ class Pathfinder(commands.Cog):
             if "--accuracy" in args.keys():
                 target_acc = int(args["--accuracy"])
 
-            # Search by name
+            # Search functionality
+            if "--search" in args.keys():
+                results = deepcopy(self.spell_sheet)
+                temp_results = []
+
+                # Fuzzy searching through spell names
+                if "--name" in args.keys():
+                    query = args["--name"]
+                    for i, spell in enumerate(results):
+                        if fuzz.ratio(spell[0], query) >= target_acc:
+                            temp_results.append(spell)
+                    results = temp_results
+                    temp_results = []
+
+                # Filtering for classes able to cast the spell
+                filtered_with_class = False
+                for arg in args.keys():
+                    if arg in self.class_filters:
+                        filtered_with_class = True
+                        for i, spell in enumerate(results):
+                            if self.spell_filter_class(i, arg):
+                                if "--level" in args.keys():
+                                    if spell[self.class_filters[arg]] == args["--level"]:
+                                        temp_results.append(spell)
+                                else:
+                                    temp_results.append(spell)
+
+                if filtered_with_class:
+                    results = temp_results
+                    temp_results = []
+
+                output = "```"
+                for result in results:
+                    output += f"{result[0]}\n"
+                await paginate.send_codeblocks(output, ctx, "")
+                return
+
+            # Get one spell by name
             if "--name" in args.keys():
                 output = ""
                 small_deets = []
@@ -87,7 +164,6 @@ class Pathfinder(commands.Cog):
                     ratio = fuzz.ratio(spell[0].lower(), args["--name"].lower())
                     if ratio >= target_acc and ratio > closest[1]:
                         matched = True
-                        print(f"New hit {ratio} vs {target_acc}")
                         closest = [i, ratio]
 
                 output += f"{self.spell_sheet[closest[0]][0]}"
@@ -101,6 +177,7 @@ class Pathfinder(commands.Cog):
                 small_deets.append(f"School: {self.spell_sheet[closest[0]][1]}")
                 small_deets.append(f"Level: {self.spell_sheet[closest[0]][4]}")
                 small_deets.append(f"Range: {self.spell_sheet[closest[0]][8]}")
+                small_deets.append(f"Duration: {self.spell_sheet[closest[0]][12]}")
 
                 # This is how we handle details that might not always be relevant
                 target = self.spell_sheet[closest[0]][11]
@@ -147,11 +224,15 @@ class Pathfinder(commands.Cog):
                     await ctx.send(f'Could not find spell "{spell_name}" :c')
                 return
 
-    @Spell.error
-    async def Spell_eh(self, ctx: commands.Context, err: Exception):
-        # Professional error handling
-        print(err)
-        await ctx.send("An error occurred. You might have done something wrong. If not, sorry about that.")
+    # @Spell.error
+    # async def Spell_eh(self, ctx: commands.Context, err: Exception):
+    #     # Professional error handling
+    #     print(err)
+    #     await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
+
+    def spell_filter_class(self, spell_i, cls):
+        cls_i = self.class_filters[cls]
+        return self.spell_sheet[spell_i][cls_i] != "NULL"
 
 
 def setup(client: commands.Bot):

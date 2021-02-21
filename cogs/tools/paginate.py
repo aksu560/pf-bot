@@ -1,10 +1,13 @@
 async def send_codeblocks(msg: str, ctx, syntax='css'):
-    if len(msg) > 2000:
-        texts = []
-        pos1 = msg.find('\n', 1700, 1900)
-        texts.append(msg[:pos1] + "```")
-        texts.append(f"```{syntax}\n{msg[pos1:]}```")
-        for i in texts:
-            await ctx.send(i)
-    else:
-        await ctx.send(msg + "```")
+    splitted = msg.split("\n")
+
+    temp_part = ""
+    for split in splitted:
+        temp_part += f"{split}\n"
+        if len(temp_part) > 1900:
+            temp_part += "```"
+            await ctx.send(temp_part)
+            temp_part = f"```{syntax}\n"
+    temp_part += "```"
+    if len(temp_part) > len(f"```{syntax}\n```")+1:
+        await ctx.send(temp_part)
