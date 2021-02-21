@@ -91,6 +91,7 @@ class Pathfinder(commands.Cog):
                     "--long": "Show extended output",
                     "--[Class]": "Filter search by the class. Example --wizard, --unchained-summoner",
                     "--level": "Define spell level to filter by. Example: --level 6 gives only 6th level spells",
+                    "--school": "Lets you search by spell school"
                 }
         }
 
