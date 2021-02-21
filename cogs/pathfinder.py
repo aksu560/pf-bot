@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import random
+import discord
 from discord.ext import commands
 from .tools import argparse
 from .tools import sheets
@@ -46,10 +48,22 @@ class Pathfinder(commands.Cog):
         }
 
         self.schools = []
-
         for spell in self.spell_sheet:
             if spell[1] not in self.schools:
                 self.schools.append(spell[1])
+
+        # These are RGB, get bend discord.py, Ill flip them just before submission to API
+        self.school_colors = {
+            "abjuration": discord.Color.blue(),
+            "conjuration": discord.Color.red(),
+            "divination": discord.Color.lighter_gray(),
+            "enchantment": discord.Color.blurple(),
+            "evocation": discord.Color.orange(),
+            "illusion": discord.Color.from_rgb(255, 0, 255),
+            "necromancy": discord.Color.from_rgb(0, 0, 0),
+            "transmutation": discord.Color.green(),
+            "universal": discord.Color.teal(),
+        }
 
     @commands.command()
     async def Spell(self, ctx, *, argument: str):
@@ -175,8 +189,8 @@ class Pathfinder(commands.Cog):
                     results = temp_results
                     temp_results = []
 
-
                 output = "```"
+                results.sort()
                 for result in results:
                     output += f"{result[0]}\n"
                 await paginate.send_codeblocks(output, ctx, "")
@@ -184,7 +198,6 @@ class Pathfinder(commands.Cog):
 
             # Get one spell by name
             if "--name" in args.keys():
-                output = ""
                 small_deets = []
 
                 # Closest match data. First one is row of spell, second one is accuracy
@@ -196,59 +209,82 @@ class Pathfinder(commands.Cog):
                         matched = True
                         closest = [i, ratio]
 
-                output += f"{self.spell_sheet[closest[0]][0]}"
+                title = self.spell_sheet[closest[0]][0]
 
+                footer = ""
                 if closest[1] < 95 or "--accuracy" in args or "--long" in args:
-                    output += f" (Accuracy of {closest[1]}%)"
-
-                output += ":```\n"
+                    footer = f"(Accuracy of {closest[1]}%)"
 
                 # Small details
-                small_deets.append(f"School: {self.spell_sheet[closest[0]][1]}")
-                small_deets.append(f"Level: {self.spell_sheet[closest[0]][4]}")
-                small_deets.append(f"Range: {self.spell_sheet[closest[0]][8]}")
-                small_deets.append(f"Duration: {self.spell_sheet[closest[0]][12]}")
+                small_deets.append(["School", self.spell_sheet[closest[0]][1]])
+                small_deets.append(["Level", self.spell_sheet[closest[0]][4]])
+                small_deets.append(["Range", self.spell_sheet[closest[0]][8]])
+                small_deets.append(["Duration", self.spell_sheet[closest[0]][12]])
 
                 # This is how we handle details that might not always be relevant
                 target = self.spell_sheet[closest[0]][11]
                 if target:
-                    small_deets.append(f"Target: {target}")
+                    small_deets.append(["Target", target])
                 area = self.spell_sheet[closest[0]][9]
                 if area:
-                    small_deets.append(f"Target: {area}")
+                    small_deets.append(["Target", area])
 
                 if self.spell_sheet[closest[0]][7] == 1 and "--long" not in args:
-                    small_deets.append(f"Components: {self.spell_sheet[closest[0]][6]}")
+                    small_deets.append(["Components", self.spell_sheet[closest[0]][6]])
 
                 if "--long" in args:
-                    small_deets.append(f"Descriptor: {self.spell_sheet[closest[0]][3]}")
-                    small_deets.append(f"Casting time: {self.spell_sheet[closest[0]][5]}")
-                    small_deets.append(f"Components: {self.spell_sheet[closest[0]][6]}")
+                    small_deets.append(["Descriptor", self.spell_sheet[closest[0]][3]])
+                    small_deets.append(["Casting time", self.spell_sheet[closest[0]][5]])
+                    small_deets.append(["Components", self.spell_sheet[closest[0]][6]])
 
                     subschool = self.spell_sheet[closest[0]][2]
                     if area:
-                        small_deets.append(f"Subschool: {subschool}")
-
-                small_deets.sort()
-                for deet in small_deets:
-                    output += f"{deet}\n"
+                        small_deets.append(["Subschool", subschool])
 
                 # Description
-                output += "\nDescription:\n"
-                if "--long" in args:
-                    output += self.spell_sheet[closest[0]][17]
-                else:
-                    output += self.spell_sheet[closest[0]][44]
+                desc = self.spell_sheet[closest[0]][17]
 
+                extra_long = []
+                if len(desc) > 2000:
+                    pos = desc.find(" ", 800, 1200)
+                    extra_long.append(desc[pos:])
+                    desc = desc[:pos]
 
                 # Constructing the SRD link
                 spell_name = self.spell_sheet[closest[0]][0].lower()
                 link = f"https://www.d20pfsrd.com/magic/all-spells/{spell_name[0]}/{spell_name.replace(' ', '-')}"
-                output += f"Source: <{link}>"
+                if footer != "":
+                    footer = f", Source: {link}"
+                else:
+                    footer = f"Source: {link}"
+
+                color = self.school_colors[self.spell_sheet[closest[0]][1]]
+                output = discord.Embed(title=title, description=desc,
+                                       color=color)
+                output.set_footer(text=footer)
+
+                # Pick random emoji from the guild.
+                emoji_list = []
+                for emoji in ctx.guild.emojis:
+                    if not emoji.animated:
+                        emoji_list.append(emoji)
+
+                if emoji_list:
+                    output.set_image(url=random.choice(emoji_list).url)
+
+                small_deets.sort()
+                for deet in small_deets:
+                    if deet[1] == "":
+                        deet[1] = "None"
+                    output.add_field(name=deet[0], value=deet[1], inline=True)
 
                 if output and matched:
-                    print(output)
-                    await paginate.send_codeblocks(output, ctx, "")
+                    await ctx.send(embed=output)
+                    if extra_long:
+                        for i in extra_long:
+                            await ctx.send(embed=discord.Embed(description=i,
+                                                               color=discord.Colour.from_rgb(
+                                                                   color[0], color[2], color[2])))
                 else:
                     spell_name = args["--name"]
                     await ctx.send(f'Could not find spell "{spell_name}" :c')
