@@ -49,7 +49,8 @@ class Pathfinder(commands.Cog):
                     "--name": "Get spell by name",
                     "--search": "Search for a spell",
                     "--accuracy": "Define accuracy for your search. 100 has to be exact match, 0 anything goes. "
-                                  "Default 80 "
+                                  "Default 80 ",
+                    "--long": "Show extended output",
                 }
         }
 
