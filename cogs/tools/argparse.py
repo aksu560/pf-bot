@@ -29,6 +29,9 @@ async def parse(msg, cmd_args, ctx):
         else:
             formattedSplit.append(entry)
 
+    if len(formattedSplit) == 1 and not formattedSplit[0].startswith("-"):
+        return {"single": formattedSplit[0]}
+
     argdict = {}
     for i, arg in enumerate(formattedSplit):
         try:
@@ -60,7 +63,7 @@ async def parse(msg, cmd_args, ctx):
                     f"Command {ctx.command} flag {arg} expected type {expected_type}. Got {got_type} instead")
                 return False
         except KeyError as e:
-            return f'Command {ctx.command} has no flag {e}'
+            return f'Command "{ctx.command}" has no flag {e}'
 
     return argdict
 
@@ -79,7 +82,7 @@ def help_text(arg_dict):
     flaglist = []
     for arg in arg_dict["arg_help"].keys():
         flaglist.append(
-            f"{str(arg)}, {', '.join(parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
+            f"{str(arg)}{', '.join(['']+parse_aliases(arg, arg_dict))}: {arg_dict['arg_help'][arg]}"
         )
     flaglist.sort()
     output = "```"
