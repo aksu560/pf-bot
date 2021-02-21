@@ -283,8 +283,7 @@ class Pathfinder(commands.Cog):
                     if extra_long:
                         for i in extra_long:
                             await ctx.send(embed=discord.Embed(description=i,
-                                                               color=discord.Colour.from_rgb(
-                                                                   color[0], color[2], color[2])))
+                                                               color=color))
                 else:
                     spell_name = args["--name"]
                     await ctx.send(f'Could not find spell "{spell_name}" :c')
