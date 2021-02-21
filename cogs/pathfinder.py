@@ -254,13 +254,13 @@ class Pathfinder(commands.Cog):
                 spell_name = self.spell_sheet[closest[0]][0].lower()
                 link = f"https://www.d20pfsrd.com/magic/all-spells/{spell_name[0]}/{spell_name.replace(' ', '-')}"
                 if footer != "":
-                    footer = f", Source: {link}"
+                    footer += f", Click on the title for source"
                 else:
-                    footer = f"Source: {link}"
+                    footer = f"Click on the title for source"
 
                 color = self.school_colors[self.spell_sheet[closest[0]][1]]
                 output = discord.Embed(title=title, description=desc,
-                                       color=color)
+                                       color=color, url=link)
                 output.set_footer(text=footer)
 
                 # Pick random emoji from the guild.
@@ -290,11 +290,11 @@ class Pathfinder(commands.Cog):
                     await ctx.send(f'Could not find spell "{spell_name}" :c')
                 return
 
-    # @Spell.error
-    # async def Spell_eh(self, ctx: commands.Context, err: Exception):
-    #     # Professional error handling
-    #     print(err)
-    #     await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
+    @Spell.error
+    async def Spell_eh(self, ctx: commands.Context, err: Exception):
+        # Professional error handling
+        print(err)
+        await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
 
     def spell_filter_class(self, spell_i, cls):
         cls_i = self.class_filters[cls]
