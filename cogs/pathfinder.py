@@ -45,6 +45,12 @@ class Pathfinder(commands.Cog):
             "--unchained-summoner": 92,
         }
 
+        self.schools = []
+
+        for spell in self.spell_sheet:
+            if spell[1] not in self.schools:
+                self.schools.append(spell[1])
+
     @commands.command()
     async def Spell(self, ctx, *, argument: str):
         """Pull Pathfinder spell data"""
@@ -60,7 +66,8 @@ class Pathfinder(commands.Cog):
                     "--search": type(True),
                     "--accuracy": type(""),
                     "--long": type(True),
-                    "--level": type("")
+                    "--level": type(""),
+                    "--school": type(""),
                 },
             # Define all the aliases for arguments here.
             "arg_alias":
@@ -72,8 +79,8 @@ class Pathfinder(commands.Cog):
                     "-find": "--search",
                     "-a": "--long",
                     "-A": "--accuracy",
-                    "--sorcerer": "--wizard"
-
+                    "--sorcerer": "--wizard",
+                    "-S": "--school",
                 },
             "arg_help":
                 {
@@ -145,6 +152,28 @@ class Pathfinder(commands.Cog):
                 if filtered_with_class:
                     results = temp_results
                     temp_results = []
+
+                # Filter by school
+                if "--school" in args.keys():
+                    target_school = ""
+                    highest = 0
+                    for school in self.schools:
+                        ratio = fuzz.ratio(school, args["--school"])
+                        if ratio > highest:
+                            highest = ratio
+                            target_school = school
+
+                    if highest < 80:
+                        await ctx.send(f'Cannot find school "{args["--school"]}"')
+                        return
+
+                    for spell in results:
+                        if spell[1] == target_school:
+                            temp_results.append(spell)
+
+                    results = temp_results
+                    temp_results = []
+
 
                 output = "```"
                 for result in results:
@@ -224,11 +253,11 @@ class Pathfinder(commands.Cog):
                     await ctx.send(f'Could not find spell "{spell_name}" :c')
                 return
 
-    # @Spell.error
-    # async def Spell_eh(self, ctx: commands.Context, err: Exception):
-    #     # Professional error handling
-    #     print(err)
-    #     await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
+    @Spell.error
+    async def Spell_eh(self, ctx: commands.Context, err: Exception):
+        # Professional error handling
+        print(err)
+        await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
 
     def spell_filter_class(self, spell_i, cls):
         cls_i = self.class_filters[cls]
