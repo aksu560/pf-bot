@@ -239,7 +239,6 @@ class Pathfinder(commands.Cog):
                 else:
                     output += self.spell_sheet[closest[0]][44]
 
-                output += "```"
 
                 # Constructing the SRD link
                 spell_name = self.spell_sheet[closest[0]][0].lower()
@@ -247,17 +246,18 @@ class Pathfinder(commands.Cog):
                 output += f"Source: <{link}>"
 
                 if output and matched:
-                    await ctx.send(output)
+                    print(output)
+                    await paginate.send_codeblocks(output, ctx, "")
                 else:
                     spell_name = args["--name"]
                     await ctx.send(f'Could not find spell "{spell_name}" :c')
                 return
 
-    @Spell.error
-    async def Spell_eh(self, ctx: commands.Context, err: Exception):
-        # Professional error handling
-        print(err)
-        await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
+    # @Spell.error
+    # async def Spell_eh(self, ctx: commands.Context, err: Exception):
+    #     # Professional error handling
+    #     print(err)
+    #     await ctx.send("An error occurred. You might have done something wrong. Get fucked nerd.")
 
     def spell_filter_class(self, spell_i, cls):
         cls_i = self.class_filters[cls]
